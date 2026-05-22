@@ -1,0 +1,49 @@
+{% extends "api/base.html" %}
+{% load static %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="logo">
+        <img src="{% static 'assets/logo_kinalert.jpeg' %}" alt="Kinalert" class="logo-img" onerror="this.style.display='none'">
+        <div>
+            <h1>Kinalert</h1>
+            <p class="slogan">M3a kinalert, khod kintek f w9itek</p>
+        </div>
+    </div>
+    <div class="header-badge">
+        {% if user.is_authenticated %}
+            <i class="fas fa-user"></i> {{ user.username }}
+            <a href="{% url 'dashboard' %}" class="btn-dashboard">Tableau de bord</a>
+            <a href="{% url 'logout' %}" class="btn-logout">Déconnexion</a>
+        {% else %}
+            <a href="{% url 'login' %}" class="btn-login">Connexion</a>
+            <a href="{% url 'register' %}" class="btn-register">Inscription</a>
+        {% endif %}
+    </div>
+</header>
+
+<div class="home-hero">
+    <div class="hero-content">
+        <h2>Votre traitement,<br>notre priorité.</h2>
+        <p>Kinalert est une boîte à médicaments intelligente qui vous rappelle vos prises à l'heure, suit votre traitement et vous accompagne au quotidien.</p>
+    </div>
+    <div class="hero-features">
+        <div class="feature"><i class="fas fa-microphone-alt"></i><span>Assistant vocal</span></div>
+        <div class="feature"><i class="fas fa-chart-line"></i><span>Suivi en temps réel</span></div>
+        <div class="feature"><i class="fas fa-shield-alt"></i><span>Sécurisé & fiable</span></div>
+    </div>
+</div>
+<style>
+    .btn-login, .btn-register, .btn-dashboard, .btn-logout { padding: 8px 16px; border-radius: 40px; text-decoration: none; margin-left: 10px; }
+    .btn-login { background: #1e6f3f; color: white; }
+    .btn-register { background: #2c7da0; color: white; }
+    .btn-dashboard { background: #1e6f3f; color: white; }
+    .btn-logout { background: #e74c3c; color: white; }
+    .home-hero { background: linear-gradient(135deg, #0f3b5c 0%, #1a5a7a 100%); border-radius: 32px; padding: 48px 40px; margin: 24px 0; color: white; text-align: center; }
+    .hero-content h2 { font-size: 2rem; margin-bottom: 20px; }
+    .hero-features { display: flex; justify-content: center; gap: 40px; margin-top: 40px; flex-wrap: wrap; }
+    .feature { display: flex; align-items: center; gap: 10px; }
+</style>
+{% endblock %}

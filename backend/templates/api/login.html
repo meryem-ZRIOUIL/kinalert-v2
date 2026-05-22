@@ -1,0 +1,25 @@
+{% extends "api/base.html" %}
+{% load static %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <h2>Connexion</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="Nom d'utilisateur" required>
+            <input type="password" name="password" placeholder="Mot de passe" required>
+            <button type="submit">Se connecter</button>
+        </form>
+        <p>Pas de compte ? <a href="{% url 'register' %}">Créer un compte</a></p>
+    </div>
+</div>
+<style>
+    .login-container { display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+    .login-card { background: white; padding: 40px; border-radius: 32px; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
+    .login-card input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 40px; border: 1px solid #ddd; }
+    .login-card button { width: 100%; padding: 12px; background: #1e6f3f; color: white; border: none; border-radius: 40px; cursor: pointer; }
+</style>
+{% endblock %}
