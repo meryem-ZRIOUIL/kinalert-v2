@@ -1,10 +1,38 @@
+# Environnement virtuel
 venv/
+env/
+ENV/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.so
+*.dll
+
+# Base de données
 db.sqlite3
+*.db
+
+# Logs
 *.log
+
+# Fichiers système
 .DS_Store
+Thumbs.db
 *.swp
 *.swo
+
+# Media et fichiers uploadés
 media/
 staticfiles/
+
+# IDE
+.vscode/
+.idea/
+
+# Fichiers de secrets
+.env
+*.key
+*.pem
