@@ -1,0 +1,340 @@
+{% extends "api/base.html" %}
+{% load static %}
+
+{% block title %}Configuration du boîtier{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="logo">
+        <img src="{% static 'assets/logo_kinalert.jpeg' %}" alt="Kinalert" class="logo-img">
+        <div>
+            <h1>Kinalert</h1>
+            <p class="slogan">M3a kinalert, khod kintek f w9itek</p>
+        </div>
+    </div>
+    <div class="header-badge">
+        <i class="fas fa-user"></i> {{ user.username }}
+        <a href="{% url 'logout' %}" class="logout-btn">Déconnexion</a>
+    </div>
+</header>
+
+<div class="config-container">
+    <h2>🔧 Configuration du boîtier</h2>
+
+    <div class="status-card">
+        <div class="led-container">
+            <div class="led" id="ledStatus"></div>
+            <span id="btStatusText">Déconnecté</span>
+        </div>
+        <button id="connectBtn" class="btn btn-primary">📱 Connecter le boîtier</button>
+    </div>
+
+    <div class="ports-grid">
+        <!-- PORT A -->
+        <div class="port-card">
+            <div class="port-title">💊 PORT A</div>
+            
+            <div class="methods-container">
+                <div class="method-tabs">
+                    <button type="button" class="method-tab" onclick="showMethod('A', 'scan')">📷 Scanner</button>
+                    <button type="button" class="method-tab" onclick="showMethod('A', 'upload')">📁 Upload</button>
+                    <button type="button" class="method-tab active" onclick="showMethod('A', 'search')">🔍 Recherche</button>
+                </div>
+                
+                <div id="methodScanA" class="method-content" style="display:none;">
+                    <button class="btn-scan" onclick="startScan('A')">📷 Lancer la caméra</button>
+                </div>
+                
+                <div id="methodUploadA" class="method-content" style="display:none;">
+                    <input type="file" id="fileInputA" accept="image/*,text/plain" style="display:none">
+                    <button class="btn-scan" onclick="document.getElementById('fileInputA').click()">📁 Choisir un fichier</button>
+                </div>
+                
+                <div id="methodSearchA" class="method-content">
+                    <input type="text" id="searchInputA" class="search-input" placeholder="Tapez le nom du médicament..." onkeyup="searchMedicament('A', this.value)">
+                    <div id="searchResultsA" class="search-results"></div>
+                </div>
+            </div>
+            
+            <div id="noticeResultA" class="notice-result">⚠️ Aucune notice scannée</div>
+            
+            <div class="form-group">
+                <label>💊 Nom du médicament</label>
+                <input type="text" id="medA" placeholder="Ex: Metformine">
+            </div>
+            <div class="form-group">
+                <label>📏 Dosage</label>
+                <input type="text" id="dosageA" placeholder="Ex: 500mg">
+            </div>
+            <div class="form-group">
+                <label>📦 Type</label>
+                <select id="typeA">
+                    <option value="comprime">Comprimé</option>
+                    <option value="effervescent">Effervescent</option>
+                    <option value="sirop">Sirop</option>
+                    <option value="capsule">Capsule</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>⏰ Horaires de prise</label>
+                <div id="scheduleA" class="schedule-list"></div>
+                <div class="add-time-row">
+                    <input type="time" id="newTimeA" value="08:00">
+                    <button class="btn-add" onclick="addTime('A')">+ Ajouter</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>📅 Durée (jours)</label>
+                <input type="number" id="dureeA" placeholder="7">
+            </div>
+            <button class="btn-save-port" onclick="savePort('A')">💾 Sauvegarder Port A</button>
+            <div id="saveResultA" class="save-result"></div>
+        </div>
+
+        <!-- PORT B -->
+        <div class="port-card">
+            <div class="port-title">💊 PORT B</div>
+            
+            <div class="methods-container">
+                <div class="method-tabs">
+                    <button type="button" class="method-tab" onclick="showMethod('B', 'scan')">📷 Scanner</button>
+                    <button type="button" class="method-tab" onclick="showMethod('B', 'upload')">📁 Upload</button>
+                    <button type="button" class="method-tab active" onclick="showMethod('B', 'search')">🔍 Recherche</button>
+                </div>
+                
+                <div id="methodScanB" class="method-content" style="display:none;">
+                    <button class="btn-scan" onclick="startScan('B')">📷 Lancer la caméra</button>
+                </div>
+                
+                <div id="methodUploadB" class="method-content" style="display:none;">
+                    <input type="file" id="fileInputB" accept="image/*,text/plain" style="display:none">
+                    <button class="btn-scan" onclick="document.getElementById('fileInputB').click()">📁 Choisir un fichier</button>
+                </div>
+                
+                <div id="methodSearchB" class="method-content">
+                    <input type="text" id="searchInputB" class="search-input" placeholder="Tapez le nom du médicament..." onkeyup="searchMedicament('B', this.value)">
+                    <div id="searchResultsB" class="search-results"></div>
+                </div>
+            </div>
+            
+            <div id="noticeResultB" class="notice-result">⚠️ Aucune notice scannée</div>
+            
+            <div class="form-group">
+                <label>💊 Nom du médicament</label>
+                <input type="text" id="medB" placeholder="Ex: Amlodipine">
+            </div>
+            <div class="form-group">
+                <label>📏 Dosage</label>
+                <input type="text" id="dosageB" placeholder="Ex: 5mg">
+            </div>
+            <div class="form-group">
+                <label>📦 Type</label>
+                <select id="typeB">
+                    <option value="comprime">Comprimé</option>
+                    <option value="effervescent">Effervescent</option>
+                    <option value="sirop">Sirop</option>
+                    <option value="capsule">Capsule</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>⏰ Horaires de prise</label>
+                <div id="scheduleB" class="schedule-list"></div>
+                <div class="add-time-row">
+                    <input type="time" id="newTimeB" value="20:00">
+                    <button class="btn-add" onclick="addTime('B')">+ Ajouter</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>📅 Durée (jours)</label>
+                <input type="number" id="dureeB" placeholder="30">
+            </div>
+            <button class="btn-save-port" onclick="savePort('B')">💾 Sauvegarder Port B</button>
+            <div id="saveResultB" class="save-result"></div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">← Retour</a>
+        <button class="btn btn-primary" onclick="saveAll()">☁️ Sauvegarder tout</button>
+    </div>
+</div>
+
+<style>
+.config-container{max-width:1400px;margin:0 auto;padding:20px}
+.ports-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin:30px 0}
+.port-card{background:white;border-radius:24px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.port-title{font-size:1.5rem;font-weight:700;margin-bottom:20px;color:#0f3b5c}
+.methods-container{margin-bottom:20px}
+.method-tabs{display:flex;gap:5px;margin-bottom:15px}
+.method-tab{flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:12px;cursor:pointer;font-weight:500}
+.method-tab.active{background:#0f3b5c;color:white}
+.method-content{padding:10px;background:#f9f9f9;border-radius:12px;text-align:center}
+.btn-scan{background:#0f3b5c;color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer}
+.search-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:25px;margin-bottom:10px}
+.search-results{max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:12px;display:none;background:white}
+.search-result-item{padding:10px;border-bottom:1px solid #eee;cursor:pointer}
+.search-result-item:hover{background:#f0f0f0}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-weight:500;margin-bottom:8px}
+.form-group input,.form-group select{width:100%;padding:10px;border:1px solid #ddd;border-radius:12px}
+.schedule-list{background:#f5f5f5;padding:10px;border-radius:12px;min-height:60px;margin-bottom:10px}
+.time-item{display:flex;justify-content:space-between;background:white;padding:8px 12px;border-radius:20px;margin-bottom:8px}
+.add-time-row{display:flex;gap:10px}
+.btn-add{background:#e0e0e0;border:none;padding:8px 16px;border-radius:20px;cursor:pointer}
+.notice-result{font-size:12px;padding:8px;border-radius:12px;margin:10px 0;background:#f8f9fa}
+.btn-save-port{background:#1e6f3f;color:white;border:none;padding:12px;border-radius:40px;width:100%;cursor:pointer;margin-top:16px}
+.save-result{font-size:12px;margin-top:8px;text-align:center}
+.actions{display:flex;gap:20px;justify-content:flex-end;margin-top:30px}
+.btn{padding:12px 24px;border-radius:40px;text-decoration:none;cursor:pointer;display:inline-block;text-align:center}
+.btn-primary{background:#0f3b5c;color:white;border:none}
+.btn-secondary{background:#6c757d;color:white}
+.status-card{display:flex;justify-content:space-between;align-items:center;background:white;padding:16px 24px;border-radius:40px;margin-bottom:30px}
+.led{width:16px;height:16px;border-radius:50%;background:gray;display:inline-block;margin-right:10px}
+.led.connected{background:#1e6f3f;box-shadow:0 0 5px #1e6f3f}
+.logout-btn{color:white;margin-left:15px;text-decoration:none}
+@media(max-width:768px){.ports-grid{grid-template-columns:1fr}}
+</style>
+
+<script>
+// BASE DE DONNÉES
+const medicamentsDB = [
+    { nom: "Metformine", dosage: "500mg", type: "comprime", horaires: ["08:00", "20:00"], duree: 7 },
+    { nom: "Metformine", dosage: "1000mg", type: "comprime", horaires: ["08:00", "20:00"], duree: 7 },
+    { nom: "Amlodipine", dosage: "5mg", type: "comprime", horaires: ["20:00"], duree: 30 },
+    { nom: "Amlodipine", dosage: "10mg", type: "comprime", horaires: ["20:00"], duree: 30 },
+    { nom: "Paracetamol", dosage: "500mg", type: "comprime", horaires: ["08:00", "14:00", "20:00"], duree: 5 },
+    { nom: "Ibuprofene", dosage: "400mg", type: "comprime", horaires: ["08:00", "20:00"], duree: 7 },
+    { nom: "Amoxicilline", dosage: "500mg", type: "capsule", horaires: ["08:00", "16:00"], duree: 10 },
+    { nom: "Omeprazole", dosage: "20mg", type: "capsule", horaires: ["08:00"], duree: 14 }
+];
+
+let schedules = { A: ['08:00'], B: ['20:00'] };
+
+function renderSchedules(port) {
+    const container = document.getElementById(`schedule${port}`);
+    if (!container) return;
+    container.innerHTML = '';
+    schedules[port].forEach((time, idx) => {
+        const div = document.createElement('div');
+        div.className = 'time-item';
+        div.innerHTML = `<span>🕐 ${time}</span><button onclick="removeTime('${port}', ${idx})">❌</button>`;
+        container.appendChild(div);
+    });
+}
+
+window.removeTime = function(port, idx) {
+    schedules[port].splice(idx, 1);
+    if (schedules[port].length === 0) schedules[port] = ['08:00'];
+    renderSchedules(port);
+};
+
+window.addTime = function(port) {
+    const input = document.getElementById(`newTime${port}`);
+    const time = input.value;
+    if (time && !schedules[port].includes(time)) {
+        schedules[port].push(time);
+        schedules[port].sort();
+        renderSchedules(port);
+        alert(`✅ Horaire ${time} ajouté`);
+    }
+};
+
+window.showMethod = function(port, method) {
+    document.getElementById(`methodScan${port}`).style.display = 'none';
+    document.getElementById(`methodUpload${port}`).style.display = 'none';
+    document.getElementById(`methodSearch${port}`).style.display = 'none';
+    document.getElementById(`method${method.charAt(0).toUpperCase() + method.slice(1)}${port}`).style.display = 'block';
+    
+    const tabs = document.querySelectorAll(`#port${port}Card .method-tab`);
+    const methods = ['scan', 'upload', 'search'];
+    tabs.forEach((tab, i) => {
+        if (methods[i] === method) tab.classList.add('active');
+        else tab.classList.remove('active');
+    });
+};
+
+window.searchMedicament = function(port, query) {
+    const resultsDiv = document.getElementById(`searchResults${port}`);
+    if (query.length < 2) {
+        resultsDiv.style.display = 'none';
+        return;
+    }
+    const filtered = medicamentsDB.filter(m => m.nom.toLowerCase().includes(query.toLowerCase()));
+    if (filtered.length === 0) {
+        resultsDiv.style.display = 'none';
+        return;
+    }
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = filtered.map(med => `
+        <div class="search-result-item" onclick="selectMedicament('${port}', '${med.nom}', '${med.dosage}', '${med.type}', ${JSON.stringify(med.horaires)}, ${med.duree})">
+            <strong>${med.nom}</strong> - ${med.dosage} (${med.type})
+        </div>
+    `).join('');
+};
+
+window.selectMedicament = function(port, nom, dosage, type, horaires, duree) {
+    console.log('Sélection:', port, nom);
+    document.getElementById(`med${port}`).value = nom;
+    document.getElementById(`dosage${port}`).value = dosage;
+    document.getElementById(`type${port}`).value = type;
+    document.getElementById(`duree${port}`).value = duree;
+    schedules[port] = horaires;
+    renderSchedules(port);
+    document.getElementById(`searchResults${port}`).style.display = 'none';
+    document.getElementById(`searchInput${port}`).value = '';
+    document.getElementById(`noticeResult${port}`).innerHTML = `✅ Médicament "${nom}" sélectionné`;
+    document.getElementById(`noticeResult${port}`).style.background = '#d4edda';
+    alert(`✅ ${nom} ${dosage} sélectionné pour port ${port}`);
+};
+
+window.startScan = async function(port) {
+    alert(`📷 Scan caméra pour port ${port} - Fonctionnalité à implémenter`);
+};
+
+// Upload
+document.addEventListener('DOMContentLoaded', () => {
+    for (let port of ['A', 'B']) {
+        const input = document.getElementById(`fileInput${port}`);
+        if (input) {
+            input.onchange = (e) => {
+                if (e.target.files[0]) {
+                    document.getElementById(`noticeResult${port}`).innerHTML = `📁 Fichier "${e.target.files[0].name}" chargé`;
+                    document.getElementById(`noticeResult${port}`).style.background = '#d4edda';
+                }
+            };
+        }
+    }
+});
+
+window.savePort = function(port) {
+    const med = document.getElementById(`med${port}`).value;
+    if (!med) {
+        alert(`❌ Veuillez sélectionner un médicament pour le port ${port}`);
+        return;
+    }
+    alert(`✅ Port ${port} sauvegardé !\nMédicament: ${med}\nHoraires: ${schedules[port].join(', ')}`);
+};
+
+window.saveAll = function() {
+    savePort('A');
+    setTimeout(() => savePort('B'), 500);
+};
+
+// Bluetooth
+document.getElementById('connectBtn')?.addEventListener('click', () => {
+    const led = document.getElementById('ledStatus');
+    const text = document.getElementById('btStatusText');
+    if (led.classList.contains('connected')) {
+        led.classList.remove('connected');
+        text.innerHTML = 'Déconnecté';
+    } else {
+        led.classList.add('connected');
+        text.innerHTML = '✅ Connecté';
+    }
+});
+
+renderSchedules('A');
+renderSchedules('B');
+console.log('✅ Config prête - Recherche fonctionnelle');
+</script>
+{% endblock %}

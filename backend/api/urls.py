@@ -2,7 +2,6 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Pages
     path('', views.home, name='home'),
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
@@ -10,7 +9,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('config/', views.config_boitier, name='config'),
     path('historique/', views.historique, name='historique'),
-    
-    # API
     path('api/status/', views.api_status, name='api_status'),
+    path('api/sauvegarder/', views.sauvegarder_configuration, name='api_sauvegarder'),
+    path('api/historique/', views.api_historique, name='api_historique'),
 ]

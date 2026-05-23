@@ -7,24 +7,44 @@
 <header class="header">
     <div class="logo">
         <img src="{% static 'assets/logo_kinalert.jpeg' %}" alt="Kinalert" class="logo-img">
-        <div><h1>Kinalert</h1><p class="slogan">M3a kinalert, khod kintek f w9itek</p></div>
+        <div>
+            <h1>Kinalert</h1>
+            <p class="slogan">M3a kinalert, khod kintek f w9itek</p>
+        </div>
     </div>
     <div class="header-badge">
         <i class="fas fa-user"></i> {{ user.username }}
-        <a href="{% url 'logout' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+        <a href="{% url 'logout' %}" class="logout-btn">Déconnexion</a>
     </div>
 </header>
 
-<div class="dashboard-actions">
-    <a href="{% url 'config' %}" class="btn btn-primary"><i class="fas fa-sliders-h"></i> Configurer mon boîtier</a>
-    <a href="{% url 'historique' %}" class="btn btn-secondary"><i class="fas fa-history"></i> Voir historique</a>
+<div class="dashboard-container">
+    <div class="welcome-card">
+        <h2>👋 Bienvenue {{ user.username }} !</h2>
+        <p>Configurez votre boîtier Kinalert et gérez vos traitements</p>
+    </div>
+    
+    <div class="dashboard-actions">
+        <a href="{% url 'config' %}" class="card-action">
+            <i class="fas fa-sliders-h"></i>
+            <h3>Configurer mon boîtier</h3>
+            <p>Ajoutez vos médicaments et horaires</p>
+        </a>
+        <a href="{% url 'historique' %}" class="card-action">
+            <i class="fas fa-history"></i>
+            <h3>Historique</h3>
+            <p>Consultez vos prises passées</p>
+        </a>
+    </div>
 </div>
 
 <style>
-    .dashboard-actions { display: flex; gap: 20px; justify-content: center; margin-top: 50px; flex-wrap: wrap; }
-    .btn-primary, .btn-secondary { padding: 15px 30px; border-radius: 40px; text-decoration: none; font-weight: bold; }
-    .btn-primary { background: #1e6f3f; color: white; }
-    .btn-secondary { background: #0f3b5c; color: white; }
-    .logout-btn { color: white; margin-left: 10px; }
+.dashboard-container{max-width:1200px;margin:0 auto;padding:20px}
+.welcome-card{background:linear-gradient(135deg,#0f3b5c,#1e6f3f);color:white;padding:40px;border-radius:32px;text-align:center;margin-bottom:40px}
+.dashboard-actions{display:flex;gap:30px;justify-content:center;flex-wrap:wrap}
+.card-action{background:white;padding:30px;border-radius:24px;text-align:center;text-decoration:none;color:#333;width:250px;box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:transform 0.2s}
+.card-action:hover{transform:translateY(-5px)}
+.card-action i{font-size:48px;color:#1e6f3f;margin-bottom:15px}
+.logout-btn{color:white;margin-left:15px;text-decoration:none}
 </style>
 {% endblock %}

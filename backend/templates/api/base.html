@@ -6,13 +6,9 @@
     <meta name="theme-color" content="#0f3b5c">
     <title>Kinalert - {% block title %}Système intelligent{% endblock %}</title>
     
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Styles -->
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     
@@ -23,7 +19,6 @@
         {% block content %}{% endblock %}
     </div>
     
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="{% static 'js/scan.js' %}"></script>
     <script src="{% static 'js/ia.js' %}"></script>
