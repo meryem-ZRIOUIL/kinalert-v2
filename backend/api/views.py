@@ -6,9 +6,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Boitier, Medicament, Traitement, Prise
 import json
 from datetime import date, timedelta
+from .models import Boitier, Medicament, Traitement, Prise, PortConfig
 
 def home(request):
     return render(request, 'api/home.html')
@@ -39,8 +39,6 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    if request.user.is_superuser:
-        return redirect('/admin/')
     return render(request, 'api/user_dashboard.html', {'user': request.user})
 
 @login_required
@@ -122,3 +120,66 @@ def api_historique(request):
         'prises': prises_data,
         'stats': {'total': total, 'prises': prises_count, 'retards': retards, 'oublies': oublies}
     })
+
+from django.http import JsonResponse
+from .models import Medicament
+
+def search_medicaments(request):
+    query = request.GET.get('q', '')
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    resultats = Medicament.objects.filter(
+        nom__istartswith=query
+    ).values('id', 'nom', 'forme')[:10]
+
+    return JsonResponse({'results': list(resultats)})
+@csrf_exempt
+@login_required
+def sauvegarder_port_config(request):
+    """Sauvegarde la config brute d'un port (JSON complet depuis ia.js)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+    try:
+        data = json.loads(request.body)
+        port = data.get('port')  # 'A' ou 'B'
+        config_json = data.get('config', {})
+
+        if port not in ['A', 'B']:
+            return JsonResponse({'error': 'Port invalide'}, status=400)
+
+        boitier, _ = Boitier.objects.get_or_create(
+            user=request.user,
+            defaults={'nom': 'Mon boîtier'}
+        )
+
+        # Upsert : créer ou mettre à jour la PortConfig
+        port_config, created = PortConfig.objects.update_or_create(
+            boitier=boitier,
+            port=port,
+            defaults={'config_json': config_json}
+        )
+
+        return JsonResponse({
+            'success': True,
+            'created': created,
+            'port': port
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def charger_port_configs(request):
+    """Retourne les configs sauvegardées des ports A et B pour l'utilisateur connecté"""
+    try:
+        boitier = Boitier.objects.get(user=request.user)
+        configs = PortConfig.objects.filter(boitier=boitier)
+        result = {}
+        for pc in configs:
+            result[pc.port] = pc.config_json
+        return JsonResponse({'success': True, 'configs': result})
+    except Boitier.DoesNotExist:
+        return JsonResponse({'success': True, 'configs': {}})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

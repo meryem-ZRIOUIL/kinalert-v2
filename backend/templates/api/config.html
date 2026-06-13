@@ -33,31 +33,31 @@
         <!-- PORT A -->
         <div class="port-card">
             <div class="port-title">💊 PORT A</div>
-            
+
             <div class="methods-container">
                 <div class="method-tabs">
-                    <button type="button" class="method-tab" onclick="showMethod('A', 'scan')">📷 Scanner</button>
-                    <button type="button" class="method-tab" onclick="showMethod('A', 'upload')">📁 Upload</button>
-                    <button type="button" class="method-tab active" onclick="showMethod('A', 'search')">🔍 Recherche</button>
+                    <button type="button" class="method-tab" onclick="showMethod('A', 'scan', this)">📷 Scanner</button>
+                    <button type="button" class="method-tab" onclick="showMethod('A', 'upload', this)">📁 Upload</button>
+                    <button type="button" class="method-tab active" onclick="showMethod('A', 'search', this)">🔍 Recherche</button>
                 </div>
-                
+
                 <div id="methodScanA" class="method-content" style="display:none;">
                     <button class="btn-scan" onclick="startScan('A')">📷 Lancer la caméra</button>
                 </div>
-                
+
                 <div id="methodUploadA" class="method-content" style="display:none;">
                     <input type="file" id="fileInputA" accept="image/*,text/plain" style="display:none">
                     <button class="btn-scan" onclick="document.getElementById('fileInputA').click()">📁 Choisir un fichier</button>
                 </div>
-                
+
                 <div id="methodSearchA" class="method-content">
                     <input type="text" id="searchInputA" class="search-input" placeholder="Tapez le nom du médicament..." onkeyup="searchMedicament('A', this.value)">
                     <div id="searchResultsA" class="search-results"></div>
                 </div>
             </div>
-            
+
             <div id="noticeResultA" class="notice-result">⚠️ Aucune notice scannée</div>
-            
+
             <div class="form-group">
                 <label>💊 Nom du médicament</label>
                 <input type="text" id="medA" placeholder="Ex: Metformine">
@@ -94,31 +94,31 @@
         <!-- PORT B -->
         <div class="port-card">
             <div class="port-title">💊 PORT B</div>
-            
+
             <div class="methods-container">
                 <div class="method-tabs">
-                    <button type="button" class="method-tab" onclick="showMethod('B', 'scan')">📷 Scanner</button>
-                    <button type="button" class="method-tab" onclick="showMethod('B', 'upload')">📁 Upload</button>
-                    <button type="button" class="method-tab active" onclick="showMethod('B', 'search')">🔍 Recherche</button>
+                    <button type="button" class="method-tab" onclick="showMethod('B', 'scan', this)">📷 Scanner</button>
+                    <button type="button" class="method-tab" onclick="showMethod('B', 'upload', this)">📁 Upload</button>
+                    <button type="button" class="method-tab active" onclick="showMethod('B', 'search', this)">🔍 Recherche</button>
                 </div>
-                
+
                 <div id="methodScanB" class="method-content" style="display:none;">
                     <button class="btn-scan" onclick="startScan('B')">📷 Lancer la caméra</button>
                 </div>
-                
+
                 <div id="methodUploadB" class="method-content" style="display:none;">
                     <input type="file" id="fileInputB" accept="image/*,text/plain" style="display:none">
                     <button class="btn-scan" onclick="document.getElementById('fileInputB').click()">📁 Choisir un fichier</button>
                 </div>
-                
+
                 <div id="methodSearchB" class="method-content">
                     <input type="text" id="searchInputB" class="search-input" placeholder="Tapez le nom du médicament..." onkeyup="searchMedicament('B', this.value)">
                     <div id="searchResultsB" class="search-results"></div>
                 </div>
             </div>
-            
+
             <div id="noticeResultB" class="notice-result">⚠️ Aucune notice scannée</div>
-            
+
             <div class="form-group">
                 <label>💊 Nom du médicament</label>
                 <input type="text" id="medB" placeholder="Ex: Amlodipine">
@@ -184,6 +184,9 @@
 .notice-result{font-size:12px;padding:8px;border-radius:12px;margin:10px 0;background:#f8f9fa}
 .btn-save-port{background:#1e6f3f;color:white;border:none;padding:12px;border-radius:40px;width:100%;cursor:pointer;margin-top:16px}
 .save-result{font-size:12px;margin-top:8px;text-align:center}
+.btn-dl-json{margin-top:12px;padding:10px 22px;background:#1e6f3f;color:white;border:none;
+             border-radius:25px;font-size:13px;font-weight:600;cursor:pointer;display:inline-block;}
+.btn-dl-json:hover{background:#155030}
 .actions{display:flex;gap:20px;justify-content:flex-end;margin-top:30px}
 .btn{padding:12px 24px;border-radius:40px;text-decoration:none;cursor:pointer;display:inline-block;text-align:center}
 .btn-primary{background:#0f3b5c;color:white;border:none}
@@ -195,32 +198,30 @@
 @media(max-width:768px){.ports-grid{grid-template-columns:1fr}}
 </style>
 
-<script>
-// BASE DE DONNÉES
-const medicamentsDB = [
-    { nom: "Metformine", dosage: "500mg", type: "comprime", horaires: ["08:00", "20:00"], duree: 7 },
-    { nom: "Metformine", dosage: "1000mg", type: "comprime", horaires: ["08:00", "20:00"], duree: 7 },
-    { nom: "Amlodipine", dosage: "5mg", type: "comprime", horaires: ["20:00"], duree: 30 },
-    { nom: "Amlodipine", dosage: "10mg", type: "comprime", horaires: ["20:00"], duree: 30 },
-    { nom: "Paracetamol", dosage: "500mg", type: "comprime", horaires: ["08:00", "14:00", "20:00"], duree: 5 },
-    { nom: "Ibuprofene", dosage: "400mg", type: "comprime", horaires: ["08:00", "20:00"], duree: 7 },
-    { nom: "Amoxicilline", dosage: "500mg", type: "capsule", horaires: ["08:00", "16:00"], duree: 10 },
-    { nom: "Omeprazole", dosage: "20mg", type: "capsule", horaires: ["08:00"], duree: 14 }
-];
+<!-- Tesseract OCR + ia.js chargés EN PREMIER avant le script inline -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<script src="{% static 'js/ia.js' %}"></script>
 
+<script>
+// -----------------------------------------------
+// Horaires UI — partagé avec ia.js via window.schedules
+// -----------------------------------------------
 let schedules = { A: ['08:00'], B: ['20:00'] };
+window.schedules = schedules;
 
 function renderSchedules(port) {
     const container = document.getElementById(`schedule${port}`);
     if (!container) return;
     container.innerHTML = '';
-    schedules[port].forEach((time, idx) => {
+    (schedules[port] || []).forEach((time, idx) => {
         const div = document.createElement('div');
         div.className = 'time-item';
-        div.innerHTML = `<span>🕐 ${time}</span><button onclick="removeTime('${port}', ${idx})">❌</button>`;
+        div.innerHTML = `<span>🕐 ${time}</span>
+            <button onclick="removeTime('${port}', ${idx})" style="background:none;border:none;cursor:pointer;">❌</button>`;
         container.appendChild(div);
     });
 }
+window.renderSchedules = renderSchedules;
 
 window.removeTime = function(port, idx) {
     schedules[port].splice(idx, 1);
@@ -230,99 +231,184 @@ window.removeTime = function(port, idx) {
 
 window.addTime = function(port) {
     const input = document.getElementById(`newTime${port}`);
-    const time = input.value;
+    const time  = input.value;
     if (time && !schedules[port].includes(time)) {
         schedules[port].push(time);
         schedules[port].sort();
         renderSchedules(port);
-        alert(`✅ Horaire ${time} ajouté`);
     }
 };
 
-window.showMethod = function(port, method) {
-    document.getElementById(`methodScan${port}`).style.display = 'none';
-    document.getElementById(`methodUpload${port}`).style.display = 'none';
-    document.getElementById(`methodSearch${port}`).style.display = 'none';
-    document.getElementById(`method${method.charAt(0).toUpperCase() + method.slice(1)}${port}`).style.display = 'block';
-    
-    const tabs = document.querySelectorAll(`#port${port}Card .method-tab`);
-    const methods = ['scan', 'upload', 'search'];
-    tabs.forEach((tab, i) => {
-        if (methods[i] === method) tab.classList.add('active');
-        else tab.classList.remove('active');
+window.showMethod = function(port, method, clickedBtn) {
+    ['Scan','Upload','Search'].forEach(m => {
+        const el = document.getElementById(`method${m}${port}`);
+        if (el) el.style.display = 'none';
     });
+    const portCard = document.getElementById(`methodScan${port}`)?.closest('.port-card');
+    if (portCard) portCard.querySelectorAll('.method-tab').forEach(b => b.classList.remove('active'));
+    if (clickedBtn) clickedBtn.classList.add('active');
+
+    const key    = method.charAt(0).toUpperCase() + method.slice(1);
+    const target = document.getElementById(`method${key}${port}`);
+    if (target) target.style.display = 'block';
 };
 
+// -----------------------------------------------
+// Recherche médicament (API Django)
+// -----------------------------------------------
+let debounceTimer;
 window.searchMedicament = function(port, query) {
     const resultsDiv = document.getElementById(`searchResults${port}`);
-    if (query.length < 2) {
-        resultsDiv.style.display = 'none';
-        return;
-    }
-    const filtered = medicamentsDB.filter(m => m.nom.toLowerCase().includes(query.toLowerCase()));
-    if (filtered.length === 0) {
-        resultsDiv.style.display = 'none';
-        return;
-    }
-    resultsDiv.style.display = 'block';
-    resultsDiv.innerHTML = filtered.map(med => `
-        <div class="search-result-item" onclick="selectMedicament('${port}', '${med.nom}', '${med.dosage}', '${med.type}', ${JSON.stringify(med.horaires)}, ${med.duree})">
-            <strong>${med.nom}</strong> - ${med.dosage} (${med.type})
-        </div>
-    `).join('');
+    clearTimeout(debounceTimer);
+    if (query.length < 2) { resultsDiv.style.display = 'none'; return; }
+    debounceTimer = setTimeout(() => {
+        fetch(`/api/search/?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.results?.length) { resultsDiv.style.display = 'none'; return; }
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = data.results.map(med => `
+                    <div class="search-result-item"
+                         onclick="selectMedicament('${port}','${med.nom}','','comprime',['08:00'],7)">
+                        <strong>${med.nom}</strong> ${med.forme ? '- ' + med.forme : ''}
+                    </div>`).join('');
+            })
+            .catch(err => console.error('Erreur recherche:', err));
+    }, 300);
 };
 
 window.selectMedicament = function(port, nom, dosage, type, horaires, duree) {
-    console.log('Sélection:', port, nom);
-    document.getElementById(`med${port}`).value = nom;
+    document.getElementById(`med${port}`).value    = nom;
     document.getElementById(`dosage${port}`).value = dosage;
-    document.getElementById(`type${port}`).value = type;
-    document.getElementById(`duree${port}`).value = duree;
-    schedules[port] = horaires;
+    document.getElementById(`type${port}`).value   = type;
+    document.getElementById(`duree${port}`).value  = duree;
+    schedules[port] = Array.isArray(horaires) ? horaires : ['08:00'];
     renderSchedules(port);
     document.getElementById(`searchResults${port}`).style.display = 'none';
     document.getElementById(`searchInput${port}`).value = '';
-    document.getElementById(`noticeResult${port}`).innerHTML = `✅ Médicament "${nom}" sélectionné`;
-    document.getElementById(`noticeResult${port}`).style.background = '#d4edda';
-    alert(`✅ ${nom} ${dosage} sélectionné pour port ${port}`);
-};
 
-window.startScan = async function(port) {
-    alert(`📷 Scan caméra pour port ${port} - Fonctionnalité à implémenter`);
-};
-
-// Upload
-document.addEventListener('DOMContentLoaded', () => {
-    for (let port of ['A', 'B']) {
-        const input = document.getElementById(`fileInput${port}`);
-        if (input) {
-            input.onchange = (e) => {
-                if (e.target.files[0]) {
-                    document.getElementById(`noticeResult${port}`).innerHTML = `📁 Fichier "${e.target.files[0].name}" chargé`;
-                    document.getElementById(`noticeResult${port}`).style.background = '#d4edda';
-                }
-            };
-        }
+    const pc = window.portConfig;
+    if (pc && pc[port]) {
+        pc[port].noticeJSON  = null;
+        pc[port].noticeText  = '';
+        pc[port].medicament  = nom;
+        pc[port].horaires    = schedules[port];
+        pc[port]._sourceMode = 'search';
     }
-});
 
+    document.getElementById(`noticeResult${port}`).innerHTML =
+        `✅ Médicament "<strong>${nom}</strong>" sélectionné via recherche`;
+    document.getElementById(`noticeResult${port}`).style.cssText =
+        'background:#d4edda;border-radius:12px;padding:8px;margin:10px 0;font-size:12px;';
+};
+
+// -----------------------------------------------
+// Générer JSON port-only (sans notice Groq)
+// -----------------------------------------------
+function telechargerJSONPortOnly(port) {
+    const med    = (document.getElementById(`med${port}`)?.value    || '').trim();
+    const dosage = (document.getElementById(`dosage${port}`)?.value || '').trim();
+    const type   = (document.getElementById(`type${port}`)?.value   || '').trim();
+    const duree  = parseInt(document.getElementById(`duree${port}`)?.value || '') || null;
+    const horaires = (window.schedules && window.schedules[port]) ? window.schedules[port] : [];
+
+    const json = {
+        port_config: {
+            port,
+            nom_medicament:     med,
+            dosage,
+            type_forme:         type,
+            duree_jours:        duree,
+            horaires_confirmes: horaires,
+            source:             'saisie_manuelle',
+            sauvegarde_le:      new Date().toISOString()
+        }
+    };
+
+    const nom  = (med || `port${port}`).replace(/\s+/g, '_').toLowerCase();
+    const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), {
+        href: url, download: `kinalert_${nom}_port${port}.json`
+    });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// -----------------------------------------------
+// Sauvegarde port + bouton JSON adapté à la source
+// -----------------------------------------------
 window.savePort = function(port) {
-    const med = document.getElementById(`med${port}`).value;
+    const med = (document.getElementById(`med${port}`)?.value || '').trim();
     if (!med) {
-        alert(`❌ Veuillez sélectionner un médicament pour le port ${port}`);
+        alert(`❌ Veuillez renseigner le nom du médicament pour le port ${port}`);
         return;
     }
-    alert(`✅ Port ${port} sauvegardé !\nMédicament: ${med}\nHoraires: ${schedules[port].join(', ')}`);
+
+    // Synchroniser portConfig avec le formulaire
+    const pc = window.portConfig;
+    if (pc && pc[port]) {
+        pc[port].medicament = med;
+        pc[port].horaires   = schedules[port] || [];
+        pc[port].dose       = (document.getElementById(`dosage${port}`)?.value || '').trim();
+        if (typeof savePortConfig === 'function') savePortConfig(port);
+    }
+
+    // Message de confirmation
+    const saveDiv = document.getElementById(`saveResult${port}`);
+    if (saveDiv) {
+        saveDiv.innerHTML = `
+            <div style="color:#1e6f3f;font-weight:600;margin-bottom:4px;">
+                ✅ Port ${port} sauvegardé
+            </div>
+            <div style="color:#374151;">
+                💊 ${med} &nbsp;|&nbsp; ⏰ ${(schedules[port]||[]).join(', ') || '—'}
+            </div>`;
+
+        // Bouton JSON adapté selon la source
+        const ancien = saveDiv.querySelector('.btn-dl-json');
+        if (ancien) ancien.remove();
+
+        const btn = document.createElement('button');
+        btn.className = 'btn-dl-json';
+
+        const hasNotice = pc && pc[port]?.noticeJSON && Object.keys(pc[port].noticeJSON).length > 0;
+
+        if (hasNotice) {
+            btn.innerHTML = '📥 Télécharger le JSON complet';
+            btn.onclick   = () => telechargerJSON(port);
+        } else {
+            btn.innerHTML = '📥 Télécharger la config du port';
+            btn.onclick   = () => telechargerJSONPortOnly(port);
+        }
+        saveDiv.appendChild(btn);
+    }
+
+    // ── Sauvegarde cloud ──
+    cloudSavePort(port).then(ok => {
+        const div = document.getElementById(`saveResult${port}`);
+        if (!div) return;
+        const ancien = div.querySelector('.cloud-status');
+        if (ancien) ancien.remove();
+        const span = document.createElement('div');
+        span.className = 'cloud-status';
+        span.style.cssText = 'font-size:11px;margin-top:4px;';
+        span.innerHTML = ok
+            ? '☁️ <span style="color:#1e6f3f;">Synchronisé avec le cloud</span>'
+            : '⚠️ <span style="color:#92400e;">Sauvegardé localement uniquement</span>';
+        div.appendChild(span);
+    });
 };
 
 window.saveAll = function() {
-    savePort('A');
-    setTimeout(() => savePort('B'), 500);
+    ['A','B'].forEach(p => savePort(p));
 };
 
-// Bluetooth
+// -----------------------------------------------
+// Bluetooth (toggle LED)
+// -----------------------------------------------
 document.getElementById('connectBtn')?.addEventListener('click', () => {
-    const led = document.getElementById('ledStatus');
+    const led  = document.getElementById('ledStatus');
     const text = document.getElementById('btStatusText');
     if (led.classList.contains('connected')) {
         led.classList.remove('connected');
@@ -333,8 +419,253 @@ document.getElementById('connectBtn')?.addEventListener('click', () => {
     }
 });
 
+// -----------------------------------------------
+// Cloud Save / Load — couche transparente, ne modifie
+// aucun comportement existant
+// -----------------------------------------------
+
+// Récupère le cookie CSRF Django
+function getCsrfToken() {
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : '';
+}
+
+// Sauvegarde la config d'un port vers la BDD Django
+async function cloudSavePort(port) {
+    const pc = window.portConfig;
+    if (!pc || !pc[port]) return false;
+    try {
+        const resp = await fetch('/api/api/port-config/save/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                port: port,
+                config: {
+                    medicament:  pc[port].medicament  || '',
+                    horaires:    pc[port].horaires    || [],
+                    dose:        pc[port].dose        || '',
+                    notes:       pc[port].notes       || '',
+                    noticeJSON:  pc[port].noticeJSON  || null,
+                    _sourceMode: pc[port]._sourceMode || '',
+                    // Valeurs actuelles du formulaire
+                    dosage: (document.getElementById(`dosage${port}`)?.value || '').trim(),
+                    type:   (document.getElementById(`type${port}`)?.value   || '').trim(),
+                    duree:  (document.getElementById(`duree${port}`)?.value  || '').trim(),
+                }
+            })
+        });
+        const data = await resp.json();
+        return data.success === true;
+    } catch (e) {
+        console.warn('[KinAlert] Cloud save échoué:', e);
+        return false;
+    }
+}
+
+// Charge et restaure les configs depuis la BDD Django au chargement de la page
+async function cloudLoadConfigs() {
+    try {
+        const resp = await fetch('/api/api/port-config/load/');
+        const data = await resp.json();
+        if (!data.success || !data.configs) return;
+
+        const pc = window.portConfig;
+
+        ['A', 'B'].forEach(port => {
+            const cfg = data.configs[port];
+            if (!cfg) return;
+
+            // Restaurer portConfig (utilisé par ia.js)
+            if (pc && pc[port]) {
+                if (cfg.medicament)  pc[port].medicament  = cfg.medicament;
+                if (cfg.horaires)    pc[port].horaires    = cfg.horaires;
+                if (cfg.dose)        pc[port].dose        = cfg.dose;
+                if (cfg.noticeJSON)  pc[port].noticeJSON  = cfg.noticeJSON;
+                if (cfg._sourceMode) pc[port]._sourceMode = cfg._sourceMode;
+            }
+
+            // Restaurer les champs du formulaire
+            const medInp = document.getElementById(`med${port}`);
+            if (cfg.medicament && medInp && !medInp.value)
+                medInp.value = cfg.medicament;
+
+            const dosageInp = document.getElementById(`dosage${port}`);
+            if (cfg.dosage && dosageInp && !dosageInp.value)
+                dosageInp.value = cfg.dosage;
+
+            const typeSel = document.getElementById(`type${port}`);
+            if (cfg.type && typeSel)
+                typeSel.value = cfg.type;
+
+            const dureeInp = document.getElementById(`duree${port}`);
+            if (cfg.duree && dureeInp && !dureeInp.value)
+                dureeInp.value = cfg.duree;
+
+            // Restaurer les horaires
+            if (cfg.horaires && cfg.horaires.length) {
+                schedules[port] = cfg.horaires;
+                renderSchedules(port);
+            }
+
+            // ── NOUVEAU : Restaurer l'affichage complet de l'analyse Groq ──
+            const noticeDiv = document.getElementById(`noticeResult${port}`);
+            if (noticeDiv && cfg.noticeJSON && Object.keys(cfg.noticeJSON).length > 0) {
+                // Re-appeler fusionnerAvecConfig pour regénérer l'affichage HTML
+                // exactement comme après une analyse fraîche
+                if (typeof fusionnerAvecConfig === 'function') {
+                    fusionnerAvecConfig(port, cfg.noticeJSON);
+                }
+                // Re-déclencher l'affichage HTML complet de ia.js
+                if (typeof afficherJSONPreview === 'function') {
+                    afficherJSONPreview(port, cfg.noticeJSON);
+                }
+
+                // Reconstruire manuellement le résumé Groq dans noticeResultX
+                const r   = cfg.noticeJSON;
+                const h   = cfg.horaires || [];
+                const pct = r.ia?.confiance_extraction
+                    ? Math.round(r.ia.confiance_extraction * 100) : null;
+
+                const row = (icon, label, val) =>
+                    val ? `<tr><td style="padding:4px 8px 4px 0;color:#6b7280;white-space:nowrap;">${icon} ${label}</td>
+                               <td style="padding:4px 0;font-weight:500;">${val}</td></tr>` : '';
+                const lst = (arr) => Array.isArray(arr) && arr.length ? arr.join(', ') : '';
+                const yn  = (val) => val === true ? '✅ Oui' : val === false ? '❌ Non' : '';
+                const section = (titre) =>
+                    `<tr><td colspan="2" style="padding:10px 0 4px;font-weight:700;color:#0f3b5c;
+                     border-top:1px solid #e5e7eb;font-size:12px;text-transform:uppercase;
+                     letter-spacing:.05em;">${titre}</td></tr>`;
+
+                noticeDiv.style.cssText = `
+                    background:#f0fdf4; border:1px solid #bbf7d0; border-radius:16px;
+                    padding:16px; margin:10px 0; font-size:12px; line-height:1.6;
+                    max-height:520px; overflow-y:auto;`;
+
+                noticeDiv.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <span style="font-weight:700;color:#1e6f3f;font-size:14px;">✅ Analyse IA Groq — Résultats complets</span>
+                        ${pct !== null ? `<span style="background:#dcfce7;color:#166534;padding:2px 10px;
+                            border-radius:20px;font-size:11px;font-weight:600;">Confiance : ${pct}%</span>` : ''}
+                    </div>
+                    ${r.resume_simple ? `<div style="background:#ecfdf5;border-left:3px solid #1e6f3f;
+                        padding:8px 12px;border-radius:0 8px 8px 0;margin-bottom:12px;
+                        font-style:italic;color:#374151;">💬 ${r.resume_simple}</div>` : ''}
+                    ${(r.alertes_importantes||[]).length ? `<div style="background:#fef2f2;border-left:3px solid #dc2626;
+                        padding:8px 12px;border-radius:0 8px 8px 0;margin-bottom:12px;color:#991b1b;">
+                        🚨 <strong>Alertes :</strong> ${r.alertes_importantes.join(' — ')}</div>` : ''}
+
+                    <table style="width:100%;border-collapse:collapse;">
+                        ${section('💊 Médicament')}
+                        ${row('', 'Nom commercial', r.medicament?.nom_commercial)}
+                        ${row('', 'Nom générique',  r.medicament?.nom)}
+                        ${row('', 'Principe actif', lst(r.medicament?.principe_actif))}
+                        ${row('', 'Classe',         r.medicament?.classe_therapeutique)}
+                        ${row('', 'Forme',          r.medicament?.forme)}
+                        ${row('', 'Dosage',         r.medicament?.dosage)}
+                        ${row('', 'Fabricant',      r.medicament?.fabricant)}
+                        ${row('', 'Pays',           r.medicament?.pays)}
+
+                        ${section('🕐 Horaires & Posologie')}
+                        ${h.length ? row('', 'Horaires confirmés', `<strong>${h.join(', ')}</strong>`) : ''}
+                        ${row('', 'Heures notice',    lst(r.horaires?.heures_suggeres_notice))}
+                        ${row('', 'Fréquence/jour',   r.horaires?.frequence_par_jour ? r.horaires.frequence_par_jour + 'x' : '')}
+                        ${row('', 'Intervalle',       r.horaires?.intervalle_heures ? r.horaires.intervalle_heures + 'h' : '')}
+                        ${row('', 'Dose par prise',   r.horaires?.dose_par_prise)}
+                        ${r.horaires?.matin ? row('', 'Matin', '✅') : ''}
+                        ${r.horaires?.midi  ? row('', 'Midi',  '✅') : ''}
+                        ${r.horaires?.soir  ? row('', 'Soir',  '✅') : ''}
+
+                        ${section('📋 Utilisation')}
+                        ${row('', 'Indications',      lst(r.utilisation?.indications))}
+                        ${row('', 'Mode admin.',      r.utilisation?.mode_administration)}
+                        ${row('', 'Dose recommandée', r.utilisation?.dose_recommandee)}
+                        ${row('', 'Fréquence',        r.utilisation?.frequence)}
+                        ${row('', 'Durée traitement', r.utilisation?.duree_traitement)}
+                        ${row('', 'Avant repas',      yn(r.utilisation?.avant_repas))}
+                        ${row('', 'Après repas',      yn(r.utilisation?.apres_repas))}
+                        ${row('', 'Avec eau',         yn(r.utilisation?.avec_eau))}
+                        ${row('', 'Oubli de dose',    r.oubli_dose)}
+
+                        ${(r.contre_indications||[]).length ? `
+                        ${section('🚫 Contre-indications')}
+                        <tr><td colspan="2" style="padding:4px 0;color:#b45309;">
+                            ${r.contre_indications.map(c=>`<div>• ${c}</div>`).join('')}
+                        </td></tr>` : ''}
+
+                        ${(r.precautions||[]).length ? `
+                        ${section('⚠️ Précautions')}
+                        <tr><td colspan="2" style="padding:4px 0;color:#92400e;">
+                            ${r.precautions.map(p=>`<div>• ${p}</div>`).join('')}
+                        </td></tr>` : ''}
+
+                        ${((r.effets_secondaires?.courants||[]).length || (r.effets_secondaires?.graves||[]).length) ? `
+                        ${section('😣 Effets secondaires')}
+                        ${(r.effets_secondaires?.courants||[]).length ? row('', 'Courants', lst(r.effets_secondaires.courants)) : ''}
+                        ${(r.effets_secondaires?.graves||[]).length  ? `<tr><td style="padding:4px 8px 4px 0;color:#6b7280;">Graves</td>
+                            <td style="color:#dc2626;font-weight:500;">${lst(r.effets_secondaires.graves)}</td></tr>` : ''}
+                        ` : ''}
+
+                        ${section('🔗 Interactions')}
+                        ${row('', 'Médicaments', lst(r.interactions?.medicaments))}
+                        ${row('', 'Aliments',    lst(r.interactions?.aliments))}
+                        ${r.interactions?.alcool ? row('', 'Alcool', '⚠️ Déconseillé') : ''}
+
+                        ${section('👥 Populations spéciales')}
+                        ${row('', 'Grossesse',        r.population_speciale?.grossesse)}
+                        ${row('', 'Allaitement',      r.population_speciale?.allaitement)}
+                        ${row('', 'Enfants',          r.population_speciale?.enfants)}
+                        ${row('', 'Personnes âgées',  r.population_speciale?.personnes_agees)}
+                        ${row('', 'Insuf. rénale',    r.population_speciale?.insuffisance_renale)}
+                        ${row('', 'Insuf. hépatique', r.population_speciale?.insuffisance_hepatique)}
+
+                        ${section('🆘 Surdosage')}
+                        ${row('', 'Symptômes',      lst(r.surdosage?.symptomes))}
+                        ${row('', 'Action urgence', r.surdosage?.action_urgence)}
+
+                        ${section('🌡️ Conservation')}
+                        ${row('', 'Température',       r.conservation?.temperature)}
+                        ${row('', 'Protéger lumière',  yn(r.conservation?.lumiere))}
+                        ${row('', 'Protéger humidité', yn(r.conservation?.humidite))}
+
+                        ${(r.ia?.champs_manquants||[]).length ? `
+                        ${section('🤖 IA — Champs non trouvés')}
+                        <tr><td colspan="2" style="padding:4px 0;color:#9ca3af;font-style:italic;">
+                            ${r.ia.champs_manquants.join(', ')}
+                        </td></tr>` : ''}
+                    </table>
+
+                    <div style="margin-top:12px;padding:8px 12px;background:#fffbeb;border-radius:8px;
+                        font-size:11px;color:#92400e;text-align:center;">
+                        ☁️ Analyse restaurée depuis le cloud
+                    </div>`;
+
+            } else if (cfg.medicament) {
+                // Pas de notice Groq mais un médicament connu → indicateur simple
+                noticeDiv.innerHTML = `☁️ Config restaurée : <strong>${cfg.medicament}</strong>`;
+                noticeDiv.style.cssText =
+                    'background:#dbeafe;border-radius:12px;padding:8px;margin:10px 0;font-size:12px;';
+            }
+        });
+
+        console.log('✅ Configs cloud restaurées');
+    } catch (e) {
+        console.warn('[KinAlert] Cloud load échoué:', e);
+    }
+}
+window.cloudSavePort = cloudSavePort;
+
+// -----------------------------------------------
+// Init
+// -----------------------------------------------
 renderSchedules('A');
 renderSchedules('B');
-console.log('✅ Config prête - Recherche fonctionnelle');
+
+// Charger les configs cloud après l'init des schedules
+cloudLoadConfigs();
+
+console.log('✅ Config prête — ia.js gère upload + OCR + Groq');
 </script>
 {% endblock %}

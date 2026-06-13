@@ -12,4 +12,7 @@ urlpatterns = [
     path('api/status/', views.api_status, name='api_status'),
     path('api/sauvegarder/', views.sauvegarder_configuration, name='api_sauvegarder'),
     path('api/historique/', views.api_historique, name='api_historique'),
+    path('search/', views.search_medicaments, name='search_medicaments'),
+    path('api/port-config/save/', views.sauvegarder_port_config, name='api_port_config_save'),
+    path('api/port-config/load/', views.charger_port_configs, name='api_port_config_load')
 ]
