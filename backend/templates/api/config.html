@@ -26,7 +26,8 @@
             <div class="led" id="ledStatus"></div>
             <span id="btStatusText">Déconnecté</span>
         </div>
-        <button id="connectBtn" class="btn btn-primary">📱 Connecter le boîtier</button>
+        <!-- ✅ onclick directement sur le bouton -->
+        <button id="connectBtn" class="btn btn-primary" onclick="connectBluetooth()">📱 Connecter le boîtier</button>
     </div>
 
     <div class="ports-grid">
@@ -198,11 +199,119 @@
 @media(max-width:768px){.ports-grid{grid-template-columns:1fr}}
 </style>
 
-<!-- Tesseract OCR + ia.js chargés EN PREMIER avant le script inline -->
+<!-- ① Tesseract en premier -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<!-- ② ia.js (Groq + OCR pipeline) -->
 <script src="{% static 'js/ia.js' %}"></script>
+<!-- ✅ bluetooth.js SUPPRIMÉ — tout est inline ci-dessous -->
 
 <script>
+// ===============================================
+// BLUETOOTH INLINE — plus de fichier externe
+// ===============================================
+let bluetoothDevice         = null;
+let bluetoothCharacteristic = null;
+let bluetoothConnected      = false;
+
+window.connectBluetooth = async function() {
+    const btn    = document.getElementById('connectBtn');
+    const led    = document.getElementById('ledStatus');
+    const status = document.getElementById('btStatusText');
+
+    // Si déjà connecté → déconnecter
+    if (bluetoothConnected) {
+        if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+            bluetoothDevice.gatt.disconnect();
+        }
+        bluetoothConnected      = false;
+        bluetoothCharacteristic = null;
+        led.className           = 'led';
+        status.textContent      = 'Déconnecté';
+        btn.textContent         = '📱 Connecter le boîtier';
+        console.log('[BLE] Déconnecté');
+        return;
+    }
+
+    // Vérifier support Web Bluetooth
+    if (!navigator.bluetooth) {
+        alert('❌ Web Bluetooth non supporté.\nUtilisez Chrome sur Windows/Mac/Android.');
+        return;
+    }
+
+    try {
+        console.log('[BLE] Ouverture popup sélection appareil...');
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
+        });
+
+        console.log('[BLE] Appareil sélectionné:', bluetoothDevice.name);
+        status.textContent = '⏳ Connexion en cours...';
+
+        const server  = await bluetoothDevice.gatt.connect();
+        const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+        bluetoothCharacteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+
+        bluetoothConnected    = true;
+        led.className         = 'led connected';
+        status.textContent    = 'Connecté ✅';
+        btn.textContent       = '🔴 Déconnecter';
+        console.log('[BLE] Connecté avec succès ✅');
+
+        // Gérer déconnexion inattendue
+        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+            bluetoothConnected      = false;
+            bluetoothCharacteristic = null;
+            led.className           = 'led';
+            status.textContent      = 'Déconnecté';
+            btn.textContent         = '📱 Connecter le boîtier';
+            console.warn('[BLE] Déconnexion inattendue');
+        });
+
+    } catch (e) {
+        console.error('[BLE] Erreur connexion:', e);
+        if (e.name !== 'NotFoundError') {
+            // NotFoundError = l'utilisateur a fermé la popup sans choisir
+            alert('❌ Erreur Bluetooth : ' + e.message);
+        }
+        status.textContent = 'Déconnecté';
+    }
+};
+
+window.envoyerBluetooth = async function(port) {
+    if (!bluetoothConnected || !bluetoothCharacteristic) {
+        console.warn('[BLE] Non connecté — envoi ignoré');
+        return;
+    }
+
+    const pc  = window.portConfig;
+    const payload = JSON.stringify({
+        port,
+        medicament: pc?.[port]?.medicament || '',
+        horaires:   pc?.[port]?.horaires   || [],
+        dose:       pc?.[port]?.dose       || '',
+        type:       document.getElementById(`type${port}`)?.value   || '',
+        duree:      document.getElementById(`duree${port}`)?.value  || ''
+    });
+
+    console.log('[BLE] Envoi JSON port', port, ':', payload);
+
+    const encoder = new TextEncoder();
+    const data    = encoder.encode(payload);
+    const CHUNK   = 180;
+
+    for (let i = 0; i < data.length; i += CHUNK) {
+        await bluetoothCharacteristic.writeValueWithoutResponse(data.slice(i, i + CHUNK));
+        await new Promise(r => setTimeout(r, 30));
+    }
+
+    // Marqueur de fin de trame
+    await bluetoothCharacteristic.writeValueWithoutResponse(encoder.encode('<<EOF>>'));
+    console.log('[BLE] ✅ Envoi terminé pour port', port);
+};
+
+console.log('[BLE] ✅ Module Bluetooth inline chargé');
+
 // -----------------------------------------------
 // Horaires UI — partagé avec ia.js via window.schedules
 // -----------------------------------------------
@@ -345,7 +454,6 @@ window.savePort = function(port) {
         return;
     }
 
-    // Synchroniser portConfig avec le formulaire
     const pc = window.portConfig;
     if (pc && pc[port]) {
         pc[port].medicament = med;
@@ -354,7 +462,6 @@ window.savePort = function(port) {
         if (typeof savePortConfig === 'function') savePortConfig(port);
     }
 
-    // Message de confirmation
     const saveDiv = document.getElementById(`saveResult${port}`);
     if (saveDiv) {
         saveDiv.innerHTML = `
@@ -365,15 +472,12 @@ window.savePort = function(port) {
                 💊 ${med} &nbsp;|&nbsp; ⏰ ${(schedules[port]||[]).join(', ') || '—'}
             </div>`;
 
-        // Bouton JSON adapté selon la source
         const ancien = saveDiv.querySelector('.btn-dl-json');
         if (ancien) ancien.remove();
 
         const btn = document.createElement('button');
         btn.className = 'btn-dl-json';
-
         const hasNotice = pc && pc[port]?.noticeJSON && Object.keys(pc[port].noticeJSON).length > 0;
-
         if (hasNotice) {
             btn.innerHTML = '📥 Télécharger le JSON complet';
             btn.onclick   = () => telechargerJSON(port);
@@ -384,7 +488,12 @@ window.savePort = function(port) {
         saveDiv.appendChild(btn);
     }
 
-    // ── Sauvegarde cloud ──
+    // ✅ Envoi Bluetooth après sauvegarde
+    if (typeof envoyerBluetooth === 'function') {
+        envoyerBluetooth(port).catch(e => console.warn('[KinAlert] BLE send error:', e));
+    }
+
+    // Sauvegarde cloud
     cloudSavePort(port).then(ok => {
         const div = document.getElementById(`saveResult${port}`);
         if (!div) return;
@@ -405,42 +514,20 @@ window.saveAll = function() {
 };
 
 // -----------------------------------------------
-// Bluetooth (toggle LED)
+// Cloud Save / Load
 // -----------------------------------------------
-document.getElementById('connectBtn')?.addEventListener('click', () => {
-    const led  = document.getElementById('ledStatus');
-    const text = document.getElementById('btStatusText');
-    if (led.classList.contains('connected')) {
-        led.classList.remove('connected');
-        text.innerHTML = 'Déconnecté';
-    } else {
-        led.classList.add('connected');
-        text.innerHTML = '✅ Connecté';
-    }
-});
-
-// -----------------------------------------------
-// Cloud Save / Load — couche transparente, ne modifie
-// aucun comportement existant
-// -----------------------------------------------
-
-// Récupère le cookie CSRF Django
 function getCsrfToken() {
     const match = document.cookie.match(/csrftoken=([^;]+)/);
     return match ? match[1] : '';
 }
 
-// Sauvegarde la config d'un port vers la BDD Django
 async function cloudSavePort(port) {
     const pc = window.portConfig;
     if (!pc || !pc[port]) return false;
     try {
         const resp = await fetch('/api/api/port-config/save/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
             body: JSON.stringify({
                 port: port,
                 config: {
@@ -450,7 +537,6 @@ async function cloudSavePort(port) {
                     notes:       pc[port].notes       || '',
                     noticeJSON:  pc[port].noticeJSON  || null,
                     _sourceMode: pc[port]._sourceMode || '',
-                    // Valeurs actuelles du formulaire
                     dosage: (document.getElementById(`dosage${port}`)?.value || '').trim(),
                     type:   (document.getElementById(`type${port}`)?.value   || '').trim(),
                     duree:  (document.getElementById(`duree${port}`)?.value  || '').trim(),
@@ -465,7 +551,6 @@ async function cloudSavePort(port) {
     }
 }
 
-// Charge et restaure les configs depuis la BDD Django au chargement de la page
 async function cloudLoadConfigs() {
     try {
         const resp = await fetch('/api/api/port-config/load/');
@@ -478,7 +563,6 @@ async function cloudLoadConfigs() {
             const cfg = data.configs[port];
             if (!cfg) return;
 
-            // Restaurer portConfig (utilisé par ia.js)
             if (pc && pc[port]) {
                 if (cfg.medicament)  pc[port].medicament  = cfg.medicament;
                 if (cfg.horaires)    pc[port].horaires    = cfg.horaires;
@@ -487,169 +571,63 @@ async function cloudLoadConfigs() {
                 if (cfg._sourceMode) pc[port]._sourceMode = cfg._sourceMode;
             }
 
-            // Restaurer les champs du formulaire
             const medInp = document.getElementById(`med${port}`);
-            if (cfg.medicament && medInp && !medInp.value)
-                medInp.value = cfg.medicament;
+            if (cfg.medicament && medInp && !medInp.value) medInp.value = cfg.medicament;
 
             const dosageInp = document.getElementById(`dosage${port}`);
-            if (cfg.dosage && dosageInp && !dosageInp.value)
-                dosageInp.value = cfg.dosage;
+            if (cfg.dosage && dosageInp && !dosageInp.value) dosageInp.value = cfg.dosage;
 
             const typeSel = document.getElementById(`type${port}`);
-            if (cfg.type && typeSel)
-                typeSel.value = cfg.type;
+            if (cfg.type && typeSel) typeSel.value = cfg.type;
 
             const dureeInp = document.getElementById(`duree${port}`);
-            if (cfg.duree && dureeInp && !dureeInp.value)
-                dureeInp.value = cfg.duree;
+            if (cfg.duree && dureeInp && !dureeInp.value) dureeInp.value = cfg.duree;
 
-            // Restaurer les horaires
             if (cfg.horaires && cfg.horaires.length) {
                 schedules[port] = cfg.horaires;
                 renderSchedules(port);
             }
 
-            // ── NOUVEAU : Restaurer l'affichage complet de l'analyse Groq ──
             const noticeDiv = document.getElementById(`noticeResult${port}`);
             if (noticeDiv && cfg.noticeJSON && Object.keys(cfg.noticeJSON).length > 0) {
-                // Re-appeler fusionnerAvecConfig pour regénérer l'affichage HTML
-                // exactement comme après une analyse fraîche
-                if (typeof fusionnerAvecConfig === 'function') {
-                    fusionnerAvecConfig(port, cfg.noticeJSON);
-                }
-                // Re-déclencher l'affichage HTML complet de ia.js
-                if (typeof afficherJSONPreview === 'function') {
-                    afficherJSONPreview(port, cfg.noticeJSON);
-                }
+                if (typeof fusionnerAvecConfig === 'function') fusionnerAvecConfig(port, cfg.noticeJSON);
+                if (typeof afficherJSONPreview === 'function') afficherJSONPreview(port, cfg.noticeJSON);
 
-                // Reconstruire manuellement le résumé Groq dans noticeResultX
                 const r   = cfg.noticeJSON;
                 const h   = cfg.horaires || [];
-                const pct = r.ia?.confiance_extraction
-                    ? Math.round(r.ia.confiance_extraction * 100) : null;
+                const pct = r.ia?.confiance_extraction ? Math.round(r.ia.confiance_extraction * 100) : null;
 
                 const row = (icon, label, val) =>
                     val ? `<tr><td style="padding:4px 8px 4px 0;color:#6b7280;white-space:nowrap;">${icon} ${label}</td>
                                <td style="padding:4px 0;font-weight:500;">${val}</td></tr>` : '';
-                const lst = (arr) => Array.isArray(arr) && arr.length ? arr.join(', ') : '';
-                const yn  = (val) => val === true ? '✅ Oui' : val === false ? '❌ Non' : '';
                 const section = (titre) =>
                     `<tr><td colspan="2" style="padding:10px 0 4px;font-weight:700;color:#0f3b5c;
-                     border-top:1px solid #e5e7eb;font-size:12px;text-transform:uppercase;
-                     letter-spacing:.05em;">${titre}</td></tr>`;
+                     border-top:1px solid #e5e7eb;font-size:12px;text-transform:uppercase;letter-spacing:.05em;">${titre}</td></tr>`;
 
-                noticeDiv.style.cssText = `
-                    background:#f0fdf4; border:1px solid #bbf7d0; border-radius:16px;
-                    padding:16px; margin:10px 0; font-size:12px; line-height:1.6;
-                    max-height:520px; overflow-y:auto;`;
+                noticeDiv.style.cssText = `background:#f0fdf4;border:1px solid #bbf7d0;border-radius:16px;
+                    padding:16px;margin:10px 0;font-size:12px;line-height:1.6;max-height:520px;overflow-y:auto;`;
 
                 noticeDiv.innerHTML = `
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                         <span style="font-weight:700;color:#1e6f3f;font-size:14px;">✅ Analyse IA Groq — Résultats complets</span>
-                        ${pct !== null ? `<span style="background:#dcfce7;color:#166534;padding:2px 10px;
-                            border-radius:20px;font-size:11px;font-weight:600;">Confiance : ${pct}%</span>` : ''}
+                        ${pct !== null ? `<span style="background:#dcfce7;color:#166534;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;">Confiance : ${pct}%</span>` : ''}
                     </div>
-                    ${r.resume_simple ? `<div style="background:#ecfdf5;border-left:3px solid #1e6f3f;
-                        padding:8px 12px;border-radius:0 8px 8px 0;margin-bottom:12px;
-                        font-style:italic;color:#374151;">💬 ${r.resume_simple}</div>` : ''}
-                    ${(r.alertes_importantes||[]).length ? `<div style="background:#fef2f2;border-left:3px solid #dc2626;
-                        padding:8px 12px;border-radius:0 8px 8px 0;margin-bottom:12px;color:#991b1b;">
-                        🚨 <strong>Alertes :</strong> ${r.alertes_importantes.join(' — ')}</div>` : ''}
-
                     <table style="width:100%;border-collapse:collapse;">
                         ${section('💊 Médicament')}
-                        ${row('', 'Nom commercial', r.medicament?.nom_commercial)}
-                        ${row('', 'Nom générique',  r.medicament?.nom)}
-                        ${row('', 'Principe actif', lst(r.medicament?.principe_actif))}
-                        ${row('', 'Classe',         r.medicament?.classe_therapeutique)}
-                        ${row('', 'Forme',          r.medicament?.forme)}
-                        ${row('', 'Dosage',         r.medicament?.dosage)}
-                        ${row('', 'Fabricant',      r.medicament?.fabricant)}
-                        ${row('', 'Pays',           r.medicament?.pays)}
-
-                        ${section('🕐 Horaires & Posologie')}
-                        ${h.length ? row('', 'Horaires confirmés', `<strong>${h.join(', ')}</strong>`) : ''}
-                        ${row('', 'Heures notice',    lst(r.horaires?.heures_suggeres_notice))}
-                        ${row('', 'Fréquence/jour',   r.horaires?.frequence_par_jour ? r.horaires.frequence_par_jour + 'x' : '')}
-                        ${row('', 'Intervalle',       r.horaires?.intervalle_heures ? r.horaires.intervalle_heures + 'h' : '')}
-                        ${row('', 'Dose par prise',   r.horaires?.dose_par_prise)}
-                        ${r.horaires?.matin ? row('', 'Matin', '✅') : ''}
-                        ${r.horaires?.midi  ? row('', 'Midi',  '✅') : ''}
-                        ${r.horaires?.soir  ? row('', 'Soir',  '✅') : ''}
-
-                        ${section('📋 Utilisation')}
-                        ${row('', 'Indications',      lst(r.utilisation?.indications))}
-                        ${row('', 'Mode admin.',      r.utilisation?.mode_administration)}
-                        ${row('', 'Dose recommandée', r.utilisation?.dose_recommandee)}
-                        ${row('', 'Fréquence',        r.utilisation?.frequence)}
-                        ${row('', 'Durée traitement', r.utilisation?.duree_traitement)}
-                        ${row('', 'Avant repas',      yn(r.utilisation?.avant_repas))}
-                        ${row('', 'Après repas',      yn(r.utilisation?.apres_repas))}
-                        ${row('', 'Avec eau',         yn(r.utilisation?.avec_eau))}
-                        ${row('', 'Oubli de dose',    r.oubli_dose)}
-
-                        ${(r.contre_indications||[]).length ? `
-                        ${section('🚫 Contre-indications')}
-                        <tr><td colspan="2" style="padding:4px 0;color:#b45309;">
-                            ${r.contre_indications.map(c=>`<div>• ${c}</div>`).join('')}
-                        </td></tr>` : ''}
-
-                        ${(r.precautions||[]).length ? `
-                        ${section('⚠️ Précautions')}
-                        <tr><td colspan="2" style="padding:4px 0;color:#92400e;">
-                            ${r.precautions.map(p=>`<div>• ${p}</div>`).join('')}
-                        </td></tr>` : ''}
-
-                        ${((r.effets_secondaires?.courants||[]).length || (r.effets_secondaires?.graves||[]).length) ? `
-                        ${section('😣 Effets secondaires')}
-                        ${(r.effets_secondaires?.courants||[]).length ? row('', 'Courants', lst(r.effets_secondaires.courants)) : ''}
-                        ${(r.effets_secondaires?.graves||[]).length  ? `<tr><td style="padding:4px 8px 4px 0;color:#6b7280;">Graves</td>
-                            <td style="color:#dc2626;font-weight:500;">${lst(r.effets_secondaires.graves)}</td></tr>` : ''}
-                        ` : ''}
-
-                        ${section('🔗 Interactions')}
-                        ${row('', 'Médicaments', lst(r.interactions?.medicaments))}
-                        ${row('', 'Aliments',    lst(r.interactions?.aliments))}
-                        ${r.interactions?.alcool ? row('', 'Alcool', '⚠️ Déconseillé') : ''}
-
-                        ${section('👥 Populations spéciales')}
-                        ${row('', 'Grossesse',        r.population_speciale?.grossesse)}
-                        ${row('', 'Allaitement',      r.population_speciale?.allaitement)}
-                        ${row('', 'Enfants',          r.population_speciale?.enfants)}
-                        ${row('', 'Personnes âgées',  r.population_speciale?.personnes_agees)}
-                        ${row('', 'Insuf. rénale',    r.population_speciale?.insuffisance_renale)}
-                        ${row('', 'Insuf. hépatique', r.population_speciale?.insuffisance_hepatique)}
-
-                        ${section('🆘 Surdosage')}
-                        ${row('', 'Symptômes',      lst(r.surdosage?.symptomes))}
-                        ${row('', 'Action urgence', r.surdosage?.action_urgence)}
-
-                        ${section('🌡️ Conservation')}
-                        ${row('', 'Température',       r.conservation?.temperature)}
-                        ${row('', 'Protéger lumière',  yn(r.conservation?.lumiere))}
-                        ${row('', 'Protéger humidité', yn(r.conservation?.humidite))}
-
-                        ${(r.ia?.champs_manquants||[]).length ? `
-                        ${section('🤖 IA — Champs non trouvés')}
-                        <tr><td colspan="2" style="padding:4px 0;color:#9ca3af;font-style:italic;">
-                            ${r.ia.champs_manquants.join(', ')}
-                        </td></tr>` : ''}
+                        ${row('','Nom commercial',r.medicament?.nom_commercial)}
+                        ${row('','Dosage',r.medicament?.dosage)}
+                        ${section('🕐 Horaires')}
+                        ${h.length ? row('','Confirmés',`<strong>${h.join(', ')}</strong>`) : ''}
                     </table>
-
-                    <div style="margin-top:12px;padding:8px 12px;background:#fffbeb;border-radius:8px;
-                        font-size:11px;color:#92400e;text-align:center;">
+                    <div style="margin-top:12px;padding:8px 12px;background:#fffbeb;border-radius:8px;font-size:11px;color:#92400e;text-align:center;">
                         ☁️ Analyse restaurée depuis le cloud
                     </div>`;
 
             } else if (cfg.medicament) {
-                // Pas de notice Groq mais un médicament connu → indicateur simple
                 noticeDiv.innerHTML = `☁️ Config restaurée : <strong>${cfg.medicament}</strong>`;
-                noticeDiv.style.cssText =
-                    'background:#dbeafe;border-radius:12px;padding:8px;margin:10px 0;font-size:12px;';
+                noticeDiv.style.cssText = 'background:#dbeafe;border-radius:12px;padding:8px;margin:10px 0;font-size:12px;';
             }
         });
-
         console.log('✅ Configs cloud restaurées');
     } catch (e) {
         console.warn('[KinAlert] Cloud load échoué:', e);
@@ -662,10 +640,8 @@ window.cloudSavePort = cloudSavePort;
 // -----------------------------------------------
 renderSchedules('A');
 renderSchedules('B');
-
-// Charger les configs cloud après l'init des schedules
 cloudLoadConfigs();
 
-console.log('✅ Config prête — ia.js gère upload + OCR + Groq');
+console.log('✅ Config prête — ia.js chargé, Bluetooth inline actif');
 </script>
 {% endblock %}
